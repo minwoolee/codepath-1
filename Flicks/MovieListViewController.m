@@ -16,6 +16,7 @@
 @interface MovieListViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
 
 @property (strong, nonatomic) NSArray<MovieModel *> *movies;
+@property (strong, nonatomic) NSArray<MovieModel *> *filteredMovies;
 @property (strong, nonatomic) UIView *networkErrorView;
 @property (strong, nonatomic) UIRefreshControl *refreshControl;
 @property (strong, nonatomic) IBOutlet UISearchBar *searchBar;
@@ -41,8 +42,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
     self.moviesTableView.dataSource = self;
     self.moviesTableView.delegate = self;
-    
-//    self.navigationController.navigationItem.titleView = self.searchBar;
+
     self.searchBar.delegate = self;
 
     [self fetchMovies];
@@ -59,14 +59,14 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section;
 {
-    return self.movies.count;
+    return self.filteredMovies.count;
 }
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath;
 {
     MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"movieCell" forIndexPath:indexPath];
     
-    MovieModel *movie = self.movies[indexPath.row];
+    MovieModel *movie = self.filteredMovies[indexPath.row];
     
     [cell.titleLabel setText:movie.title];
     [cell.overviewLabel setText:movie.overview];
@@ -85,19 +85,46 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath;
 {
     [self.moviesTableView deselectRowAtIndexPath:indexPath animated:YES];
-    
-    self.searchBar.hidden = YES;
-    
-//    MovieModel *movie = self.movies[indexPath.row];
-//    detailViewController.movie = movie;
-//    [self.navigationController pushViewController:detailViewController animated:YES];
 }
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender;
 {
     NSIndexPath *indexPath = [self.moviesTableView indexPathForSelectedRow];
     MovieDetailViewController *movieDetailViewController = segue.destinationViewController;
-    movieDetailViewController.movie = self.movies[indexPath.row];
+    movieDetailViewController.movie = self.filteredMovies[indexPath.row];
+}
+
+#pragma mark -
+#pragma mark UISearchBarDelegate methods
+
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText;
+{
+    NSString *input = searchBar.text;
+    if (input.length == 0) {
+        self.filteredMovies = self.movies;
+    } else {
+        NSPredicate *predicate = [NSPredicate predicateWithBlock:^BOOL(id evaluatedObject, NSDictionary *bindings) {
+            NSString *title = ((MovieModel*)evaluatedObject).title;
+            NSRange range = [title rangeOfString:input options:NSCaseInsensitiveSearch];
+            return range.location != NSNotFound;
+        }];
+        self.filteredMovies = [self.movies filteredArrayUsingPredicate:predicate];
+    }
+    [self.moviesTableView reloadData];
+}
+
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar;
+{
+    self.searchBar.showsCancelButton = YES;
+}
+
+- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar;
+{
+    self.searchBar.showsCancelButton = NO;
+    self.searchBar.text = @"";
+    [self.searchBar resignFirstResponder];
+    self.filteredMovies = self.movies;
+    [self.moviesTableView reloadData];
 }
 
 #pragma mark -
@@ -105,13 +132,11 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
 -(void) fetchMovies;
 {
-    NSDictionary *tapTitleUrlMap =
-    @{
+    NSDictionary *tapTitleUrlMap = @{
       @"Now Playing" : @"https://api.themoviedb.org/3/movie/now_playing?api_key=",
       @"Top Rated" : @"https://api.themoviedb.org/3/movie/top_rated?api_key="
     };
     NSString *tabTitle = self.navigationController.tabBarItem.title;
-    NSLog(@"Tab title: %@", tabTitle);
     NSString *urlString = [[tapTitleUrlMap objectForKey:tabTitle] stringByAppendingString:APIKey];
 
     NSURL *url = [NSURL URLWithString:urlString];
@@ -141,6 +166,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
                                                         [movies addObject:[[MovieModel alloc] initWithDictionary:movie]];
                                                     }
                                                     self.movies = movies;
+                                                    self.filteredMovies = self.movies;
                                                     [self.moviesTableView reloadData];
                                                 } else {
                                                     NSLog(@"An error occurred: %@", error.description);
