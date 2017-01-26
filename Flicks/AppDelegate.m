@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "MovieListViewController.h"
 
 @interface AppDelegate ()
 
@@ -16,7 +17,29 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+    
+    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+
+    UIStoryboard *storyBoard = [UIStoryboard storyboardWithName:@"Main" bundle:nil];
+
+    // Set up the "Now Playing" View Controller
+    UINavigationController *nc1 = (UINavigationController *)[storyBoard instantiateViewControllerWithIdentifier:@"navigationController"];
+    nc1.tabBarItem.title = @"Now Playing";
+    nc1.tabBarItem.image = [UIImage imageNamed:@"now_playing"];
+    
+    // Set up the "Top Rated" View Controller
+    UINavigationController *nc2 = (UINavigationController *)[storyBoard instantiateViewControllerWithIdentifier:@"navigationController"];
+    nc2.tabBarItem.image = [UIImage imageNamed:@"top_rated"];
+    nc2.tabBarItem.title = @"Top Rated";
+
+    // Set up the Tab Bar Controller to have two tabsr
+    UITabBarController *tabBarController = [[UITabBarController alloc] init];
+    [tabBarController setViewControllers:@[nc1, nc2]];
+    
+    // Make the Tab Bar Controller the root view controller
+    self.window.rootViewController = tabBarController;
+    [self.window makeKeyAndVisible];
+    
     return YES;
 }
 

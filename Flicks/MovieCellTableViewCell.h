@@ -1,5 +1,5 @@
 //
-//  ViewController.h
+//  MovieCellTableViewCell.h
 //  Flicks
 //
 //  Created by Min Lee on 1/23/17.
@@ -8,8 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface ViewController : UIViewController
-
+@interface MovieCellTableViewCell : UITableViewCell
 
 @end
-
