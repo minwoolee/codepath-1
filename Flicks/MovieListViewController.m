@@ -19,7 +19,8 @@
 @property (strong, nonatomic) NSArray<MovieModel *> *filteredMovies;
 @property (strong, nonatomic) UIView *networkErrorView;
 @property (strong, nonatomic) UIRefreshControl *refreshControl;
-@property (strong, nonatomic) IBOutlet UISearchBar *searchBar;
+@property (strong, nonatomic) UISearchBar *searchBar;
+
 @property (strong, nonatomic) IBOutlet UITableView *moviesTableView;
 
 @end
@@ -43,6 +44,9 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     self.moviesTableView.dataSource = self;
     self.moviesTableView.delegate = self;
 
+    // set up search bar
+    self.searchBar = [UISearchBar new];
+    self.navigationItem.titleView = self.searchBar;
     self.searchBar.delegate = self;
 
     [self fetchMovies];
