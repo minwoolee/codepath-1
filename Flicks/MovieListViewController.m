@@ -8,20 +8,26 @@
 
 #import "MovieListViewController.h"
 #import "MovieTableViewCell.h"
+#import "MovieCollectionViewCell.h"
 #import "MovieDetailViewController.h"
 #import "MovieModel.h"
 #import <AFNetworking/UIImageView+AFNetworking.h>
 #import <MBProgressHUD/MBProgressHUD.h>
 
-@interface MovieListViewController () <UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate>
+@interface MovieListViewController ()
+    <UITableViewDataSource, UITableViewDelegate,
+     UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout,
+     UISearchBarDelegate>
 
 @property (strong, nonatomic) NSArray<MovieModel *> *movies;
 @property (strong, nonatomic) NSArray<MovieModel *> *filteredMovies;
-@property (strong, nonatomic) UIView *networkErrorView;
 @property (strong, nonatomic) UIRefreshControl *refreshControl;
-@property (strong, nonatomic) UISearchBar *searchBar;
 
-@property (strong, nonatomic) IBOutlet UITableView *moviesTableView;
+@property (weak, nonatomic) IBOutlet UIView *networkErrorView;
+@property (weak, nonatomic) IBOutlet UISearchBar *searchBar;
+@property (weak, nonatomic) IBOutlet UICollectionView *moviesCollectionView;
+@property (weak, nonatomic) IBOutlet UITableView *moviesTableView;
+@property (weak, nonatomic) IBOutlet UISegmentedControl *segmentedControl;
 
 @end
 
@@ -37,18 +43,24 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     [self.refreshControl addTarget:self action:@selector(handleRefresh:) forControlEvents:UIControlEventValueChanged];
     [self.moviesTableView addSubview:self.refreshControl];
 
-    self.networkErrorView = [[[NSBundle mainBundle] loadNibNamed:@"NetworkErrorView" owner:self options:nil] lastObject];
     self.networkErrorView.hidden = YES;
-    [self.moviesTableView addSubview:self.networkErrorView];
+    [self.view addSubview:self.networkErrorView];
 
     self.moviesTableView.dataSource = self;
     self.moviesTableView.delegate = self;
+    
+    self.moviesCollectionView.dataSource = self;
+    self.moviesCollectionView.delegate = self;
 
-    // set up search bar
-    self.searchBar = [UISearchBar new];
-    self.navigationItem.titleView = self.searchBar;
+    // set up search bars
+//    self.searchBar = [UISearchBar new];
+//    self.navigationItem.titleView = self.searchBar;
     self.searchBar.delegate = self;
 
+    [self.segmentedControl addTarget:self
+                         action:@selector(segmentChanged:)
+               forControlEvents:UIControlEventValueChanged];
+    
     [self fetchMovies];
 }
 
@@ -57,9 +69,22 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     // Dispose of any resources that can be recreated.
 }
 
+- (void)viewDidLayoutSubviews
+{
+    [super viewDidLayoutSubviews];
+    CGFloat top = [self.topLayoutGuide length];
+    CGFloat bottom = [self.bottomLayoutGuide length];
+    UIEdgeInsets insets = UIEdgeInsetsMake(top, 0, bottom, 0);
+    self.moviesCollectionView.contentInset = insets;
+    self.moviesTableView.contentInset = insets;
+    
+    CGRect networkErrorViewFrame = self.networkErrorView.frame;
+    networkErrorViewFrame.origin.y = top;
+    self.networkErrorView.frame = networkErrorViewFrame;
+}
 
 #pragma mark -
-#pragma mark TableView delegates and data source methods
+#pragma mark UITableView delegates and data source methods
 
 -(NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section;
 {
@@ -68,13 +93,13 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath;
 {
-    MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"movieCell" forIndexPath:indexPath];
-    
     MovieModel *movie = self.filteredMovies[indexPath.row];
-    
+
+    MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"movieCell" forIndexPath:indexPath];
+    cell.movie = movie;
+    // TODO: initialize rest of the properties in the view cell class
     [cell.titleLabel setText:movie.title];
     [cell.overviewLabel setText:movie.overview];
-    
     cell.posterImage.contentMode = UIViewContentModeScaleAspectFit;
     [cell.posterImage setImageWithURL:movie.posterUrl];
      
@@ -93,10 +118,55 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender;
 {
-    NSIndexPath *indexPath = [self.moviesTableView indexPathForSelectedRow];
+    // TODO: imporove? 
+    MovieModel *movie = nil;
+    if ([sender isKindOfClass:[MovieTableViewCell class]]) {
+        movie = ((MovieTableViewCell *)sender).movie;
+    } else if ([sender isKindOfClass:[MovieCollectionViewCell class]]) {
+        movie = ((MovieCollectionViewCell *)sender).movie;
+    }
     MovieDetailViewController *movieDetailViewController = segue.destinationViewController;
-    movieDetailViewController.movie = self.filteredMovies[indexPath.row];
+    movieDetailViewController.movie = movie;
 }
+
+#pragma mark -
+#pragma mark UICollectionView delegates and data source methods
+
+- (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section;
+{
+    return self.filteredMovies.count;
+}
+
+- (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath;
+{
+    MovieModel *movie = self.filteredMovies[indexPath.row];
+
+    MovieCollectionViewCell *cell = [self.moviesCollectionView dequeueReusableCellWithReuseIdentifier:@"movieCollectionCell" forIndexPath:indexPath];
+    cell.movie = movie;
+    // TODO: initialize rest of the properties in the view cell class
+    cell.titleLabel.text = movie.title;
+    [cell.posterImage setImageWithURL:movie.posterUrl];
+    
+    return cell;
+}
+
+- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath;
+{
+    int itemsPerRow = 3;
+    CGFloat width = self.view.frame.size.width / itemsPerRow;
+    return CGSizeMake(width, width);
+}
+
+- (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section;
+{
+    return UIEdgeInsetsMake(0, 0, 0, 0);
+}
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section;
+{
+    return 0;
+}
+
 
 #pragma mark -
 #pragma mark UISearchBarDelegate methods
@@ -114,7 +184,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
         }];
         self.filteredMovies = [self.movies filteredArrayUsingPredicate:predicate];
     }
-    [self.moviesTableView reloadData];
+    [self reloadData];
 }
 
 - (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar;
@@ -128,7 +198,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     self.searchBar.text = @"";
     [self.searchBar resignFirstResponder];
     self.filteredMovies = self.movies;
-    [self.moviesTableView reloadData];
+    [self reloadData];
 }
 
 #pragma mark -
@@ -171,7 +241,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
                                                     }
                                                     self.movies = movies;
                                                     self.filteredMovies = self.movies;
-                                                    [self.moviesTableView reloadData];
+                                                    [self reloadData];
                                                 } else {
                                                     NSLog(@"An error occurred: %@", error.description);
                                                 }
@@ -182,11 +252,27 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     [task resume];
 }
 
--(void)handleRefresh:(UIRefreshControl *)refreshControl;
+- (void)handleRefresh:(UIRefreshControl *)refreshControl;
 {
     [self fetchMovies];
-    [self.moviesTableView reloadData];
+    [self reloadData];
     [self.refreshControl endRefreshing];
+}
+
+- (void)segmentChanged:(UISegmentedControl *)segmentedControl;
+{
+    self.moviesCollectionView.hidden = (segmentedControl.selectedSegmentIndex == 0);
+    self.moviesTableView.hidden = !(self.moviesCollectionView.hidden);
+    [self reloadData];
+}
+
+- (void)reloadData;
+{
+    if (self.segmentedControl.selectedSegmentIndex == 0) {
+        [self.moviesTableView reloadData];
+    } else {
+        [self.moviesCollectionView reloadData];
+    }
 }
 
 @end

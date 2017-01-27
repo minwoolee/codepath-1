@@ -29,13 +29,13 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view from its nib.
     
-    if (self.movie.backgroundImageUrl) {
-        [self.backgroundImage setImageWithURL:self.movie.backgroundImageUrl];
-    }
+    // load image from cache first
+    [self.backgroundImage setImageWithURL:self.movie.posterUrl];
     
     [self.titleLabel setText:self.movie.title];
     [self.releaseDateLabel setText:self.movie.releaseDate];
     [self.ratingLabel setText:self.movie.ratings];
+    [self.runningTimeLabel setText:self.movie.runningTime];
     [self.overviewLabel setText:self.movie.overview];
     [self.overviewLabel sizeToFit];
 
@@ -47,10 +47,11 @@
     
     CGFloat offsetY = 150;
     
-//    self.scrollView.backgroundColor = [UIColor yellowColor];
     self.scrollView.contentInset = UIEdgeInsetsMake(offsetY, 0, 0, 0);
     self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.detailView.frame),
                                              CGRectGetHeight(self.detailView.frame) + paddingY);
+    
+    [self loadDetails];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -67,5 +68,43 @@
     // Pass the selected object to the new view controller.
 }
 */
+
+- (void)loadDetails;
+{
+    NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
+
+    NSString *urlString = [NSString stringWithFormat:@"https://api.themoviedb.org/3/movie/%@?api_key=%@", self.movie.id, APIKey];
+    
+    NSURL *url = [NSURL URLWithString:urlString];
+    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];
+    
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                                          delegate:nil
+                                                     delegateQueue:[NSOperationQueue mainQueue]];
+    
+    NSURLSessionDataTask *task = [session dataTaskWithRequest:request
+                                            completionHandler:^(NSData * _Nullable data,
+                                                                NSURLResponse * _Nullable response,
+                                                                NSError * _Nullable error) {
+                                                if (!error) {
+                                                    NSError *jsonError = nil;
+                                                    NSDictionary *responseDictionary =
+                                                    [NSJSONSerialization JSONObjectWithData:data
+                                                                                    options:kNilOptions
+                                                                                      error:&jsonError];
+                                                    NSString *runningTime = [NSString stringWithFormat:@"%@ minutes", responseDictionary[@"runtime"]];
+                                                    if (runningTime) {
+                                                        [self.runningTimeLabel setText:runningTime];
+                                                    }
+                                                } else {
+                                                    NSLog(@"An error occurred: %@", error.description);
+                                                }
+                                            }];
+    [task resume];
+
+    // also load high-res image here
+    [self.backgroundImage setImageWithURL:self.movie.backgroundImageUrl];
+
+}
 
 @end
