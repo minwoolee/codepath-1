@@ -22,3 +22,9 @@
 -(id) initWithDictionary:(NSDictionary *)dictionary;
 
 @end
+
+@protocol MovieCell <NSObject>
+
+@property (nonatomic, strong) MovieModel *movie;
+
+@end

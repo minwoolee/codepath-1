@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "MovieModel.h"
 
-@interface MovieTableViewCell : UITableViewCell
+@interface MovieTableViewCell : UITableViewCell <MovieCell>
 
 @property (strong, nonatomic) MovieModel *movie;
 

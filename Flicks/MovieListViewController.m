@@ -111,13 +111,8 @@
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender;
 {
-    // TODO: imporove? 
     MovieModel *movie = nil;
-    if ([sender isKindOfClass:[MovieTableViewCell class]]) {
-        movie = ((MovieTableViewCell *)sender).movie;
-    } else if ([sender isKindOfClass:[MovieCollectionViewCell class]]) {
-        movie = ((MovieCollectionViewCell *)sender).movie;
-    }
+    movie = ((id<MovieCell>)sender).movie;
     MovieDetailViewController *movieDetailViewController = segue.destinationViewController;
     movieDetailViewController.movie = movie;
 }
@@ -224,7 +219,6 @@
                                                                                     options:kNilOptions
                                                                                       error:&jsonError];
 //                                                    NSLog(@"Response: %@", responseDictionary);
-                                                    // TODO: verify return value
                                                     NSMutableArray *movies = [NSMutableArray new];
                                                     for (NSDictionary *movie in responseDictionary[@"results"]) {
                                                         [movies addObject:[[MovieModel alloc] initWithDictionary:movie]];
