@@ -7,6 +7,7 @@
 //
 
 #import "MovieListViewController.h"
+#import "Constants.h"
 #import "MovieTableViewCell.h"
 #import "MovieCollectionViewCell.h"
 #import "MovieDetailViewController.h"
@@ -33,8 +34,6 @@
 
 @implementation MovieListViewController
 
-NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view, typically from a nib.
@@ -52,7 +51,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     self.moviesCollectionView.dataSource = self;
     self.moviesCollectionView.delegate = self;
 
-    // set up search bars
+    // If setting up search bars programmatically
 //    self.searchBar = [UISearchBar new];
 //    self.navigationItem.titleView = self.searchBar;
     self.searchBar.delegate = self;
@@ -96,13 +95,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
     MovieModel *movie = self.filteredMovies[indexPath.row];
 
     MovieTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"movieCell" forIndexPath:indexPath];
-    cell.movie = movie;
-    // TODO: initialize rest of the properties in the view cell class
-    [cell.titleLabel setText:movie.title];
-    [cell.overviewLabel setText:movie.overview];
-    cell.posterImage.contentMode = UIViewContentModeScaleAspectFit;
-    [cell.posterImage setImageWithURL:movie.posterUrl];
-     
+    cell.movie = movie;     
     return cell;
 }
 
@@ -143,9 +136,6 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
 
     MovieCollectionViewCell *cell = [self.moviesCollectionView dequeueReusableCellWithReuseIdentifier:@"movieCollectionCell" forIndexPath:indexPath];
     cell.movie = movie;
-    // TODO: initialize rest of the properties in the view cell class
-    cell.titleLabel.text = movie.title;
-    [cell.posterImage setImageWithURL:movie.posterUrl];
     
     return cell;
 }
@@ -211,7 +201,7 @@ NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
       @"Top Rated" : @"https://api.themoviedb.org/3/movie/top_rated?api_key="
     };
     NSString *tabTitle = self.navigationController.tabBarItem.title;
-    NSString *urlString = [[tapTitleUrlMap objectForKey:tabTitle] stringByAppendingString:APIKey];
+    NSString *urlString = [[tapTitleUrlMap objectForKey:tabTitle] stringByAppendingString:API_KEY];
 
     NSURL *url = [NSURL URLWithString:urlString];
     NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];

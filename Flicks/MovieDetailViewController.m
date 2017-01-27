@@ -7,6 +7,7 @@
 //
 
 #import "MovieDetailViewController.h"
+#import "Constants.h"
 #import <AFNetworking/UIImageView+AFNetworking.h>
 
 @interface MovieDetailViewController ()
@@ -71,9 +72,7 @@
 
 - (void)loadDetails;
 {
-    NSString *const APIKey = @"a07e22bc18f5cb106bfe4cc1f83ad8ed";
-
-    NSString *urlString = [NSString stringWithFormat:@"https://api.themoviedb.org/3/movie/%@?api_key=%@", self.movie.id, APIKey];
+    NSString *urlString = [NSString stringWithFormat:@"https://api.themoviedb.org/3/movie/%@?api_key=%@", self.movie.id, API_KEY];
     
     NSURL *url = [NSURL URLWithString:urlString];
     NSURLRequest *request = [[NSURLRequest alloc] initWithURL:url];

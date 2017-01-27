@@ -11,10 +11,6 @@
 
 @interface MovieTableViewCell : UITableViewCell
 
-@property (weak, nonatomic) IBOutlet UIImageView *posterImage;
-@property (weak, nonatomic) IBOutlet UILabel *titleLabel;
-@property (weak, nonatomic) IBOutlet UILabel *overviewLabel;
-
 @property (strong, nonatomic) MovieModel *movie;
 
 @end

@@ -7,8 +7,26 @@
 //
 
 #import "MovieTableViewCell.h"
+#import <AFNetworking/UIImageView+AFNetworking.h>
+
+@interface MovieTableViewCell()
+
+@property (weak, nonatomic) IBOutlet UIImageView *posterImage;
+@property (weak, nonatomic) IBOutlet UILabel *titleLabel;
+@property (weak, nonatomic) IBOutlet UILabel *overviewLabel;
+
+@end
 
 @implementation MovieTableViewCell
+
+- (void)setMovie:(MovieModel *)movie;
+{
+    _movie = movie;
+    [self.titleLabel setText:movie.title];
+    [self.overviewLabel setText:movie.overview];
+    [self.posterImage setImageWithURL:movie.posterUrl];
+
+}
 
 - (void)awakeFromNib {
     [super awakeFromNib];
